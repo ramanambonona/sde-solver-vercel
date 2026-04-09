@@ -7,6 +7,6 @@
     window.APP_CONFIG = {
         apiUrl: isLocal
             ? 'http://localhost:8000'
-            : 'https://sde-solver-app.onrender.com'
+            : '/api'
     };
 })();
