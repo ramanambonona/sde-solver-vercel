@@ -13,6 +13,17 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
+
+async function extractErrorMessage(response, fallbackMessage) {
+    try {
+        const errorData = await response.json();
+        return errorData.detail || errorData.message || fallbackMessage;
+    } catch (e) {
+        const text = await response.text();
+        return text || fallbackMessage;
+    }
+}
+
 // Pastel colors palette for charts
 const PASTEL_COLORS = [
     '#FFB6C1', '#87CEEB', '#98FB98', '#DDA0DD', 
@@ -155,8 +166,8 @@ async function solveSDE() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Failed to solve SDE');
+            const errorMessage = await extractErrorMessage(response, 'Failed to solve SDE');
+            throw new Error(errorMessage);
         }
 
         const data = await response.json();
@@ -166,8 +177,8 @@ async function solveSDE() {
             const stepElement = document.createElement('div');
             stepElement.className = 'solution-step bg-white p-6 rounded-lg shadow-md';
             stepElement.innerHTML = `
-                <h4 class="font-bold text-teal-700 mb-2">Step ${index + 1}: $ {step.title}</h4>
-                <div class="formula-box">$${step.content}$$</div> 
+                <h4 class="font-bold text-teal-700 mb-2">Step ${index + 1}: ${step.title}</h4>
+                <div class="formula-box">$$${step.content}$$</div> 
             `;
             stepsContainer.appendChild(stepElement);
         });
@@ -231,7 +242,11 @@ async function simulateSDE() {
 
         let parameters = {};
         if (paramsText) {
-            parameters = JSON.parse(paramsText);
+            try {
+                parameters = JSON.parse(paramsText);
+            } catch (e) {
+                throw new Error('Invalid JSON in parameters field');
+            }
         }
 
         const requestData = {
@@ -253,8 +268,8 @@ async function simulateSDE() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Failed to simulate SDE');
+            const errorMessage = await extractErrorMessage(response, 'Failed to simulate SDE');
+            throw new Error(errorMessage);
         }
 
         const data = await response.json();
